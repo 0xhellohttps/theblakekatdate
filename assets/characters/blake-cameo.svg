@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250" width="1200" height="1500">
+<defs>
+      <filter id="f-wash" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" seed="7" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="10" xChannelSelector="R" yChannelSelector="G" result="d"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.016 0.42" numOctaves="2" seed="21" result="m"/>
+        <feColorMatrix in="m" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -6 0 0 0 3.9" result="a"/>
+        <feComposite in="d" in2="a" operator="in"/>
+      </filter>
+      <filter id="f-wash-s" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="2" seed="3" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G" result="d"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.04 0.9" numOctaves="2" seed="14" result="m"/>
+        <feColorMatrix in="m" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -6 0 0 0 3.9" result="a"/>
+        <feComposite in="d" in2="a" operator="in"/>
+      </filter>
+      <filter id="f-wash-xs" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.14" numOctaves="2" seed="5" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G" result="d"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.09 1.6" numOctaves="2" seed="9" result="m"/>
+        <feColorMatrix in="m" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -6 0 0 0 3.9" result="a"/>
+        <feComposite in="d" in2="a" operator="in"/>
+      </filter>
+      <filter id="f-ink" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="2" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G" result="d"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="6" result="g"/>
+        <feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -1.2 0 0 0 1.8" result="ga"/>
+        <feComposite in="d" in2="ga" operator="in"/>
+      </filter>
+      <filter id="f-ink-s" x="-8%" y="-8%" width="116%" height="116%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.09" numOctaves="2" seed="8" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="2" xChannelSelector="R" yChannelSelector="G" result="d"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="6" result="g"/>
+        <feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -1.2 0 0 0 1.8" result="ga"/>
+        <feComposite in="d" in2="ga" operator="in"/>
+      </filter>
+      <filter id="f-ink-xs" x="-8%" y="-8%" width="116%" height="116%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.2" numOctaves="2" seed="4" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="1.1" xChannelSelector="R" yChannelSelector="G" result="d"/>
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" seed="6" result="g"/>
+        <feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -1.2 0 0 0 1.8" result="ga"/>
+        <feComposite in="d" in2="ga" operator="in"/>
+      </filter>
+      <filter id="f-wobble" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="2" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <linearGradient id="g-gold" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#8F6E2C"/><stop offset=".35" stop-color="#E7CF92"/>
+        <stop offset=".6" stop-color="#B8954A"/><stop offset="1" stop-color="#7C5D1F"/>
+      </linearGradient>
+      <radialGradient id="g-wax" cx=".35" cy=".3" r=".8">
+        <stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/>
+        <stop offset="1" stop-color="#000" stop-opacity=".25"/>
+      </radialGradient>
+    <clipPath id="oval"><ellipse cx="100" cy="125" rx="92" ry="117"/></clipPath></defs>
+<ellipse cx="100" cy="125" rx="99" ry="124" fill="#FFFEFB" stroke="#B8923C" stroke-width="1"/>
+<g clip-path="url(#oval)">
+      <rect width="200" height="250" fill="#FFFBF5"/>
+      <g filter="url(#f-wash-s)" transform="translate(1.6 1.1)"><rect x="-10" y="-10" width="220" height="270" fill="#BBD6F5"/></g>
+      <g filter="url(#f-wash-s)" transform="translate(1.6 1.1)"><path d="M28 252 C32 198 62 174 86 166 L100 188 L114 166 C138 174 168 198 172 252Z" fill="#1E5B3C"/>
+           <path d="M86 166 L100 192 L114 166 L108 158 L92 158Z" fill="#FFFDF9"/>
+           <path d="M86 136 L86 166 L100 180 L114 166 L114 136Z" fill="#F0C7A4"/>
+           <path d="M100 172 L88 165 L88 179Z M100 172 L112 165 L112 179Z" fill="#231F22"/>
+           <ellipse cx="66" cy="100" rx="5" ry="9" fill="#F0C7A4"/><ellipse cx="134" cy="100" rx="5" ry="9" fill="#F0C7A4"/>
+           <path d="M68 96 C66 64 82 50 100 50 C118 50 134 64 132 96 C131 122 118 142 100 144 C82 142 69 122 68 96Z" fill="#F0C7A4"/>
+           <circle cx="80" cy="112" r="8" fill="#F4A9B8" opacity=".45"/><circle cx="120" cy="112" r="8" fill="#F4A9B8" opacity=".45"/>
+           <path d="M64 94 C54 60 72 34 98 33 C112 20 138 34 138 60 C142 72 139 86 135 95 C133 78 127 66 116 61 C104 68 86 64 75 71 C70 78 68 86 64 94Z" fill="#4A3426"/></g><g filter="url(#f-ink-s)" fill="none" stroke="#1F1C1B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M68 98 C68 122 82 142 100 144 C118 142 132 122 132 98"/>
+           <path d="M72 70 C86 62 104 66 118 58 M78 50 C90 40 108 36 124 46 M100 33 C92 40 89 48 91 58"/>
+           <path d="M77 87 q9 -5 18 -1 M105 86 q9 -4 18 1" stroke-width="2.400"/>
+           <path d="M80 96 q7 -4 14 0 M106 96 q7 -4 14 0"/>
+           <circle cx="87" cy="97" r="2.300" fill="#1F1C1B" stroke="none"/><circle cx="113" cy="97" r="2.300" fill="#1F1C1B" stroke="none"/>
+           <path d="M100 97 C98 106 96 112 102 114 M90 125 q11 5 21 -1 q2 -1 2 -3"/>
+           <path d="M86 166 L100 192 L114 166 M72 174 L96 234 M128 174 L104 234"/></g>
+    </g>
+<ellipse cx="100" cy="125" rx="92" ry="117" fill="none" stroke="#B8923C" stroke-width="1.5"/>
+</svg>
