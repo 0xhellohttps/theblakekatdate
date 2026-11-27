@@ -6,8 +6,7 @@
 ------------------------------------------------------------------- */
 window.INVITATION = {
   // Scene 3 — The Details
-  date: "December 19",
-  time: "Dec 19",
+  date: "December",
   location: "Hotel Bel-Air",
 
   // Scene 5 — The Story So Far (the three acts are written in index.html)
@@ -16,8 +15,8 @@ window.INVITATION = {
     // Set url to "" to hide it.
     dinnerMenu: {
       label: "Peruse the menu",
-      venue: "The Polo Lounge, The Beverly Hills Hotel",
-      url: "https://www.dorchestercollection.com/media/y3ifwggh/the-beverly-hills-hotel-polo-lounge-dinner-menu.pdf",
+      venue: "The Restaurant at Hotel Bel-Air",
+      url: "https://cms.dorchestercollection.com/media/ylufc2jp/hotel-bel-air_restaurant-sample-dinner-menu.pdf",
     },
   },
 

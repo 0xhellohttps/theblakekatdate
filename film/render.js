@@ -29,10 +29,11 @@ if (flag('frames')) frames = String(flag('frames')).split(',').map(Number);
 else { const a = +(flag('from') || 0), b = +(flag('to') || FPS * DUR); frames = Array.from({ length: b - a }, (_, i) => a + i); }
 const workers = Math.min(+(flag('workers') || 4), frames.length);
 
+const BASE_PORT = 9400 + Math.floor(Math.random() * 400) * 10;   // a fresh range each run, so a stale Chrome can't block it
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function worker(id, list) {
-  const port = 9400 + id;
+  const port = BASE_PORT + id;
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'film-chrome-'));
   const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, '--hide-scrollbars',
     '--force-device-scale-factor=1', `--window-size=${W},${H}`, '--disable-background-timer-throttling', '--disable-renderer-backgrounding', 'about:blank'], { stdio: 'ignore' });
