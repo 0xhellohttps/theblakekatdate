@@ -6,7 +6,7 @@
 ------------------------------------------------------------------- */
 window.INVITATION = {
   // Scene 3 — The Details
-  date: "December",
+  date: "December 18",
   location: "Hotel Bel-Air",
 
   // Scene 5 — The Story So Far (the three acts are written in index.html)
