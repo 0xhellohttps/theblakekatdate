@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Katflix</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#F29AAE">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..600;1,6..96,400..500&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Jost:wght@300;400;500&family=Covered+By+Your+Grace&family=La+Belle+Aurore&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="is-open channel">
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="channel__bar">
+    <a class="channel__brand hand" href="watch.html">Katflix <small>starring Blake, Kat &amp; Chicken Nugget</small></a>
+    <a class="btn btn--line" href="index.html">The Invitation</a>
+  </header>
+
+  <main>
+    <section class="feature" id="feature" aria-live="polite"></section>
+    <div id="rows"></div>
+  </main>
+
+  <footer class="colophon colophon--plain">
+    <p class="colophon__mono">B <i>&amp;</i> K</p>
+    <p>Katflix &mdash; presented by Chicken Nugget. All episodes drawn by hand.</p>
+  </footer>
+
+  <div class="player" id="player" hidden role="dialog" aria-modal="true" aria-labelledby="player-title">
+    <div class="player__box">
+      <div class="player__top">
+        <p class="hand" id="player-title"></p>
+        <button class="btn btn--line" id="player-close" type="button">Close</button>
+      </div>
+      <video id="player-video" controls playsinline></video>
+    </div>
+  </div>
+
+  <script src="js/episodes.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    const list = window.EPISODES || [];
+    const $ = (id) => document.getElementById(id);
+    const make = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const key = (id) => 'bk-channel:' + id;
+    const progress = (id) => { try { return JSON.parse(localStorage.getItem(key(id)) || 'null'); } catch (e) { return null; } };
+
+    // the big one at the top
+    const f = list.find((e) => e.featured && e.video) || list.find((e) => e.video);
+    if (f) {
+      const el = $('feature');
+      el.style.backgroundImage = `url("${f.backdrop || f.poster}")`;
+      el.innerHTML = `<div class="feature__text"><p class="eyebrow">${esc(f.label)} &middot; ${esc(f.length)}</p><h1 class="display">${esc(f.title)}</h1><p class="feature__blurb">${esc(f.blurb)}</p><p><button class="btn btn--solid" type="button" data-play="${esc(f.id)}">&#9654;&ensp;Play</button></p></div>`;
+    }
+
+    // rows of episodes
+    const rows = $('rows');
+    [...new Set(list.map((e) => e.row))].forEach((name) => {
+      const sec = make('section', 'shelf');
+      sec.appendChild(make('h2', 'title', esc(name)));
+      const strip = make('ul', 'shelf__strip');
+      list.filter((e) => e.row === name).forEach((e) => {
+        const li = make('li', 'tile' + (e.video ? '' : ' tile--soon'));
+        const p = progress(e.id);
+        const pct = p && p.d ? Math.min(100, Math.round((p.t / p.d) * 100)) : 0;
+        li.innerHTML = `<button type="button" ${e.video ? `data-play="${esc(e.id)}"` : 'disabled'} aria-label="${e.video ? 'Play' : 'Coming soon:'} ${esc(e.title)}">
+            <span class="tile__art">${e.poster ? `<img src="${esc(e.poster)}" alt="" loading="lazy">` : '<span class="tile__soon hand">Coming<br>soon</span>'}${e.video ? '<span class="tile__play" aria-hidden="true">&#9654;</span>' : ''}${pct > 2 && pct < 97 ? `<span class="tile__bar"><i style="width:${pct}%"></i></span>` : ''}</span>
+            <span class="eyebrow">${esc(e.label)} &middot; ${esc(e.length)}</span>
+            <span class="tile__title hand">${esc(e.title)}</span>
+            <span class="tile__blurb">${esc(e.blurb)}</span>
+          </button>`;
+        strip.appendChild(li);
+      });
+      sec.appendChild(strip); rows.appendChild(sec);
+    });
+
+    // the player
+    const player = $('player'), video = $('player-video');
+    let current = null, opener = null;
+    function open(id) {
+      const e = list.find((x) => x.id === id); if (!e || !e.video) return;
+      current = e; opener = document.activeElement;
+      const tall = e.videoPortrait && window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches;
+      video.src = tall ? e.videoPortrait : e.video; video.poster = e.poster || '';
+      player.classList.toggle('player--tall', !!tall);
+      $('player-title').textContent = e.label + ' — ' + e.title;
+      player.hidden = false; document.body.style.overflow = 'hidden';
+      const p = progress(id);
+      video.addEventListener('loadedmetadata', () => { if (p && p.t > 5 && p.t < video.duration - 10) video.currentTime = p.t; }, { once: true });
+      video.play().catch(() => {});
+      $('player-close').focus();
+    }
+    function close() {
+      video.pause(); video.removeAttribute('src'); video.load();
+      player.hidden = true; document.body.style.overflow = '';
+      if (opener) opener.focus();
+      current = null;
+    }
+    video.addEventListener('timeupdate', () => { if (current && video.duration) try { localStorage.setItem(key(current.id), JSON.stringify({ t: video.currentTime, d: video.duration })); } catch (e) {} });
+    document.addEventListener('click', (ev) => { const b = ev.target.closest('[data-play]'); if (b) open(b.dataset.play); });
+    $('player-close').addEventListener('click', close);
+    player.addEventListener('click', (ev) => { if (ev.target === player) close(); });
+    document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !player.hidden) close(); });
+    if (location.hash) open(location.hash.slice(1));
+  })();
+  </script>
+</body>
+</html>

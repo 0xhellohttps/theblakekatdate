@@ -653,6 +653,46 @@ h1:focus-visible, h2:focus-visible { outline: none; }
   .cinema__frame video { aspect-ratio: 9 / 16; max-width: 22rem; }
 }
 
+/* The Channel: a featured episode, shelves of tiles, and a player */
+.hand { font-family: var(--hand); font-style: normal; font-weight: 400; text-transform: uppercase; letter-spacing: .13em; }
+.channel { background: var(--black); }
+.channel main { background: var(--paper); }
+.channel__bar { position: sticky; top: 9px; z-index: 30; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .8rem 1.4rem; background: var(--paper); border-bottom: 3px solid var(--black); }
+.channel__brand { font-size: 1.9rem; color: var(--red); text-decoration: none; line-height: 1; }
+.channel__brand small { font-size: .42em; color: var(--black); margin-left: .6em; }
+@media (max-width: 620px) { .channel__brand small { display: none; } }
+.channel__bar .btn { min-height: 2.6rem; padding: .5rem 1.1rem; font-size: .95rem; }
+.feature { position: relative; min-height: min(78vh, 46rem); display: flex; align-items: flex-end; background: var(--blush) center / cover no-repeat; border-bottom: 4px solid var(--black); padding: 1.4rem; }
+.feature__text { background: var(--paper); border: 4px solid var(--black); border-radius: 8px; box-shadow: 0 0 0 7px #F2A25C, 0 0 0 10px #2B4FA0; padding: 1.5rem 1.6rem 1.4rem; max-width: 34rem; margin: 0 .7rem 1rem; display: grid; gap: .8rem; }
+.feature__text .display { font-size: clamp(2.6rem, 9vw, 4.6rem); }
+.feature__blurb { font-size: 1.15rem; line-height: 1.45; }
+.shelf { padding: clamp(2rem, 6vw, 3.2rem) 1.5rem 0; }
+.shelf:last-child { padding-bottom: clamp(3rem, 8vw, 5rem); }
+.shelf .title { font-size: clamp(1.5rem, 5vw, 2.1rem); margin-bottom: 1.1rem; }
+.shelf__strip { list-style: none; margin: 0; padding: 4px 4px 1.2rem; display: grid; grid-auto-flow: column; grid-auto-columns: min(78vw, 21rem); gap: 1.4rem; overflow-x: auto; scroll-snap-type: x proximity; }
+.tile { scroll-snap-align: start; }
+.tile button { display: grid; gap: .45rem; width: 100%; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; color: inherit; font: inherit; }
+.tile button:disabled { cursor: default; }
+.tile__art { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; background: var(--blush-pale); border: 4px solid var(--black); border-radius: 4px; box-shadow: 6px 7px 0 rgba(31, 28, 27, .16); transition: transform .5s var(--ease); margin-bottom: .4rem; }
+.tile button:not(:disabled):hover .tile__art, .tile button:focus-visible .tile__art { transform: translateY(-5px) rotate(-.6deg); }
+.tile__art img { width: 100%; height: 100%; object-fit: cover; }
+.tile__play { position: absolute; left: .7rem; bottom: .7rem; width: 2.6rem; height: 2.6rem; display: grid; place-items: center; background: var(--red); color: var(--paper); border: 3px solid var(--black); border-radius: 50%; font-size: .9rem; padding-left: .15rem; }
+.tile__soon { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font-size: 1.7rem; color: var(--red); background: var(--paper) var(--crayon-yellow); }
+.tile__bar { position: absolute; left: 0; right: 0; bottom: 0; height: 7px; background: rgba(31, 28, 27, .25); }
+.tile__bar i { display: block; height: 100%; background: var(--red); }
+.tile .eyebrow { font-size: .9rem; text-indent: 0; }
+.tile__title { font-size: 1.5rem; color: var(--black); line-height: 1.15; }
+.tile__blurb { color: var(--ink-soft); font-size: 1.05rem; line-height: 1.4; }
+.player { position: fixed; inset: 0; z-index: 95; display: grid; place-items: center; background: rgba(31, 28, 27, .92); padding: 1rem; }
+.player[hidden] { display: none; }
+.player__box { width: min(100%, 1100px); display: grid; gap: .8rem; }
+.player__top { display: flex; justify-content: space-between; align-items: center; gap: 1rem; color: var(--paper); font-size: 1.3rem; }
+.player__top .btn { min-height: 2.6rem; padding: .4rem 1.1rem; font-size: .95rem; }
+.player video { width: 100%; max-height: 78vh; aspect-ratio: 16 / 9; background: #000; border: 4px solid var(--paper); border-radius: 4px; }
+.player--tall .player__box { width: min(100%, 24rem); }
+.player--tall video { aspect-ratio: 9 / 16; }
+@media (min-width: 980px) { .feature { padding: 2.5rem; } .shelf { padding-left: 2.6rem; padding-right: 2.6rem; } .channel__bar { padding: .9rem 2.6rem; } }
+
 .colophon__swans { width: 96px; margin: 0 auto 1.2rem; }
 
 /* ==================================================================

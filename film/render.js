@@ -6,7 +6,7 @@
    frames between them. No dependencies: it speaks the DevTools
    protocol over Node's built-in WebSocket.
 
-     node render.js <outDir> [--vertical] [--scale 2] [--frames 0,24,48 | --from A --to B] [--workers N]
+     node render.js <outDir> [--page episode.html --dur 300] [--vertical] [--scale 2] [--frames 0,24,48 | --from A --to B] [--workers N]
 ------------------------------------------------------------------- */
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -17,11 +17,12 @@ const args = process.argv.slice(2);
 const flag = (name) => { const i = args.indexOf('--' + name); return i < 0 ? null : (args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : true); };
 const outDir = path.resolve(args[0]);
 const vertical = !!flag('vertical');
-const FPS = 24, DUR = 85;
+const FPS = 24, DUR = +(flag('dur') || 85);      // seconds
+const PAGE = flag('page') || 'film.html';
 const W = vertical ? 1080 : 1920, H = vertical ? 1920 : 1080;
 const SCALE = +(flag('scale') || 1);          // --scale 2 renders the same layout at twice the pixels (4K)
 const CHROME = process.env.CHROME || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const URL_ = `${process.env.FILM_URL || 'http://127.0.0.1:4173/film/film.html'}?render${vertical ? '&v' : ''}`;
+const URL_ = `${process.env.FILM_URL || 'http://127.0.0.1:4173/film/'}${PAGE}?render${vertical ? '&v' : ''}`;
 fs.mkdirSync(outDir, { recursive: true });
 
 let frames;

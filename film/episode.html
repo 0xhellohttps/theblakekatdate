@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blake &amp; Kat — Episode One: The Point-Two</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Covered+By+Your+Grace&family=La+Belle+Aurore&display=swap" rel="stylesheet">
+<style>
+  /* Same stage and same rules as film.html: nothing plays, everything is scrubbed
+     to a time by seek(t). This one is driven by episode/episode.json, which says
+     when every line is spoken and how open each mouth is on every frame. */
+  html, body { margin: 0; background: #1b1a19; overflow: hidden; height: 100%; }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; background: #FDFAF4; }
+  #picture, #shift, .shot, .card, #grain, #pink { position: absolute; inset: 0; }
+  .shot { display: none; overflow: hidden; background: #FDFAF4; }
+  .board { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  .board > *, .abs { position: absolute; }
+  img { display: block; }
+  .tile { left: 0; top: 0; width: 1920px; height: 1080px; background-size: 1920px 1080px; background-repeat: repeat-x; }
+  #line { position: absolute; border: 5px solid #1F1C1B; border-radius: 3px; transform: rotate(-.15deg); }
+  #pink { border: 22px solid #F29AAE; box-shadow: inset 0 0 0 4px #1F1C1B; pointer-events: none; }
+  #grain { pointer-events: none; opacity: .5; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .3 0 0 0 0 .22 0 0 0 .26 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .hand { font-family: "Covered By Your Grace", "Marker Felt", cursive; text-transform: uppercase; letter-spacing: .13em; line-height: 1.12; }
+
+  /* characters: a drawing, a mouth that opens with the voice */
+  .char { position: absolute; transform-origin: 50% 100%; }
+  .char img { width: 100%; }
+  .mouth { position: absolute; background: #6E1F2B; border: 4px solid #1F1C1B; border-radius: 50%; opacity: 0; }
+
+  /* captions, signs, HUD */
+  #cap { position: absolute; left: 110px; right: 110px; text-align: center; }
+  #cap .who { display: block; font-size: 34px; color: #1F1C1B; margin-bottom: 8px; }
+  #cap .say { display: block; font-size: 44px; color: #D8402F; text-wrap: balance; }
+  .plate { background: #FDFAF4; border: 5px solid #1F1C1B; border-radius: 10px; box-shadow: 0 0 0 9px #F2A25C, 0 0 0 13px #2B4FA0; color: #D8402F; text-align: center; white-space: nowrap; }
+  .post { position: absolute; bottom: 0; width: 14px; background: #1F1C1B; }
+  .signpost { position: absolute; left: 0; bottom: 0; width: 300px; height: 330px; }
+  .signpost .post { left: 143px; height: 250px; }
+  .signpost .plate { position: absolute; left: 0; right: 0; top: 0; padding: 14px 8px 10px; font-size: 40px; white-space: normal; rotate: -2deg; }
+  .banner { position: absolute; left: 0; top: 176px; width: 1300px; height: 904px; }
+  .banner .post { height: 830px; }
+  .banner .flag { position: absolute; left: 0; right: 0; top: 0; height: 110px; display: grid; place-items: center; background: #FDFAF4; border: 5px solid #1F1C1B; font-size: 64px; color: #D8402F; background-image: repeating-linear-gradient(90deg, #F29AAE 0 26px, transparent 26px 52px); background-size: 100% 16px; background-repeat: no-repeat; background-position: 0 100%; }
+  #hud { position: absolute; right: 120px; top: 108px; padding: 12px 26px 8px; font-size: 46px; opacity: 0; }
+  #hud small { display: block; font-size: 22px; color: #1F1C1B; }
+  #route { position: relative; width: 260px; height: 34px; margin-top: 4px; border-bottom: 5px dotted #1F1C1B; }
+  #route img { position: absolute; bottom: 2px; left: 0; width: 44px; }
+  .confetti { position: absolute; top: 0; width: 18px; height: 26px; border-radius: 4px; opacity: 0; }
+
+  .card { background: #FDFAF4; display: grid; place-items: center; text-align: center; opacity: 0; }
+  .card > div { position: relative; z-index: 2; }
+  .card p { margin: 0; opacity: 0; }
+  .card .xl { font-size: 150px; color: #D8402F; }
+  .card .lg { font-size: 96px; color: #1F1C1B; }
+  .card .md { font-size: 44px; color: #1F1C1B; }
+  .card .sm { font-size: 32px; color: #1F1C1B; }
+  .card .red { color: #D8402F; }
+  .card .script { font-family: "La Belle Aurore", cursive; text-transform: none; letter-spacing: 0; font-size: 58px; color: #33503F; }
+  .sil { position: absolute; bottom: 0; transform-origin: 50% 100%; opacity: 0; }
+
+  #play { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(27,26,25,.86); color: #FDFAF4; font: 500 15px sans-serif; letter-spacing: .3em; text-transform: uppercase; cursor: pointer; z-index: 10; }
+  .render #play { display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="picture"><div id="shift"></div></div>
+  <div id="line"></div>
+  <div id="hud" class="plate hand"><span id="miles">0.00</span> MI<small>of 0.20</small><div id="route"><img src="layers/walker.png" alt=""></div></div>
+  <div id="cap" class="hand"><span class="who"></span><span class="say"></span></div>
+
+  <div class="card" id="intro"><div>
+    <p class="hand sm" id="i1">Chicken Nugget presents</p>
+    <p class="hand xl" id="i2">Blake &amp; Kat</p>
+    <p class="hand md" id="i3">in</p>
+    <p class="hand lg" id="i4">The Point-Two</p>
+    <p class="script" id="i5">an athletic event in one act</p>
+    <p class="hand sm red" id="i6" style="margin-top:26px">Episode One</p>
+  </div></div>
+
+  <div class="card" id="outro"><div>
+    <p class="hand xl" id="o1">The End</p>
+    <p class="hand sm" id="o2" style="margin-top:18px">Starring</p>
+    <p class="hand md" id="o3"><span class="red">Blake</span> &middot; the motivator</p>
+    <p class="hand md" id="o4"><span class="red">Kat</span> &middot; the reason</p>
+    <p class="hand md" id="o5"><span class="red">Chicken Nugget</span> &middot; the champion</p>
+    <p class="hand sm" id="o6" style="margin-top:30px">0.2 miles &middot; 5 warm cookies &middot; 2 phone calls &middot; 1 surprise (classified)</p>
+    <p class="script" id="o7" style="margin-top:20px">To be continued&hellip; very soon.</p>
+  </div></div>
+
+  <div id="pink"></div>
+  <div id="grain"></div>
+</div>
+<div id="play">Click to play</div>
+<audio id="audio" src="episode/episode.m4a" preload="auto"></audio>
+
+<script>
+(async function () {
+  'use strict';
+  const Q = new URLSearchParams(location.search);
+  const RENDER = Q.has('render');
+  const W = 1920, H = 1080;
+  if (RENDER) document.documentElement.classList.add('render');
+  const $ = (id) => document.getElementById(id);
+  const stage = $('stage'), shift = $('shift');
+  const EP = await (await fetch('episode/episode.json')).json();
+  const DUR = EP.duration, FPS = EP.fps, BEAT = 60 / EP.bpm;
+  const scene = Object.fromEntries(EP.scenes.map((s) => [s.id, s]));
+  const M = EP.marks;
+
+  /* ---------- the scrubber ---------- */
+  const anims = [], shots = [], perFrame = [];
+  const EASE = 'cubic-bezier(.45,0,.55,1)';
+  function track(el, kfs, ease) {
+    const t0 = kfs[0][0], d = Math.max(kfs[kfs.length - 1][0] - t0, 0.001);
+    const a = el.animate(kfs.map(([t, p]) => Object.assign({ offset: Math.min(1, Math.max(0, (t - t0) / d)), easing: ease || EASE }, p)), { delay: t0 * 1000, duration: d * 1000, fill: 'both' });
+    a.pause(); anims.push(a); return a;
+  }
+  const rise = (id, t) => track($(id), [[t, { opacity: 0, transform: 'translateY(16px)' }], [t + 0.8, { opacity: 1, transform: 'none' }]], 'ease-out');
+  function rng(seed) { let s = seed >>> 0; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); }
+  const el = (tag, css, parent, attrs) => { const n = document.createElement(tag); Object.assign(n.style, css || {}); Object.assign(n, attrs || {}); (parent || stage).appendChild(n); return n; };
+
+  /* ---------- the plate: a matted picture with a caption band, as in the film ---------- */
+  const MAT = [74, 74, 196, 74], OFF = (MAT[0] - MAT[2]) / 2;
+  $('picture').style.clipPath = `inset(${MAT[0]}px ${MAT[1]}px ${MAT[2]}px ${MAT[3]}px)`;
+  Object.assign($('line').style, { top: MAT[0] - 5 + 'px', left: MAT[3] - 5 + 'px', right: MAT[1] - 5 + 'px', bottom: MAT[2] - 5 + 'px' });
+  $('cap').style.top = H - MAT[2] + 26 + 'px';
+  const cam = ([cx, cy, z]) => `translate(${W / 2 - cx * z}px, ${H / 2 + OFF - cy * z}px) scale(${z})`;
+
+  function shot(tin, tout, hard) {
+    const s = { el: el('div', {}, shift), tin, tend: tout + 0.8, chars: {} };
+    s.el.className = 'shot';
+    s.board = el('div', {}, s.el); s.board.className = 'board';
+    track(s.el, [[tin, { opacity: 0 }], [tin + (hard ? 0.02 : 0.4), { opacity: 1 }]], 'linear');
+    s.img = (name, x, y, w, parent) => el('img', { position: 'absolute', left: x + 'px', top: y + 'px', width: w + 'px' }, parent || s.board, { src: `layers/${name}.png`, alt: '' });
+    s.tile = (name) => { const d = el('div', { backgroundImage: `url(layers/${name}.png)` }, s.board); d.className = 'tile'; return d; };
+    s.char = (who, name, x, y, w, mouth) => {              // mouth: [x%, y%, width%]
+      const c = el('div', { left: x + 'px', top: y + 'px', width: w + 'px' }, s.board); c.className = 'char';
+      const bob = el('div', {}, c);
+      el('img', {}, bob, { src: `layers/${name}.png`, alt: '' });
+      const m = el('div', { left: mouth[0] + '%', top: mouth[1] + '%', width: mouth[2] + '%', height: mouth[2] * 0.62 * w / 100 + 'px', marginLeft: -mouth[2] / 2 + '%', marginTop: -mouth[2] * 0.31 * w / 100 + 'px' }, bob);
+      m.className = 'mouth';
+      s.chars[who] = { box: c, bob, mouth: m };
+      return s.chars[who];
+    };
+    // the camera cuts on each line: a close-up for short, punchy lines, the two of them otherwise
+    s.cut = (lines, views, pick) => {
+      const k = [];
+      lines.forEach((ln, i) => {
+        const v = views[pick(ln, i)], next = i + 1 < lines.length ? lines[i + 1].start : tout + 0.8;
+        const t0 = i === 0 ? tin : ln.start - 0.12;
+        k.push([t0, { transform: cam(v) }], [next - 0.125, { transform: cam([v[0], v[1], v[2] * 1.035]) }]);
+      });
+      track(s.board, k, 'linear');
+    };
+    shots.push(s); return s;
+  }
+  const linesIn = (...ids) => EP.lines.filter((l) => ids.includes(l.scene));
+  const MOUTH = { B: [50, 50.6, 9], K: [50, 50.2, 8], N: [50, 41.4, 10] };
+  const chooser = (ln, i) => (ln.who === 'N' ? (i % 2 ? 'dog' : 'wide') : ln.text.length < 30 ? ln.who : 'two');
+
+  /* =====================  INTRO  ===================== */
+  const palms = (parent, t0, t1) => [['sil-palm', { left: '60px', height: '720px' }, ''], ['sil-palm-b', { right: '80px', height: '600px' }, 'scaleX(-1)']].forEach(([name, css, flip]) => {
+    const p = el('img', css, parent, { src: `layers/${name}.png`, alt: '' }); p.className = 'sil';
+    const k = [[t0, { opacity: 0, transform: `${flip} rotate(0deg)` }]];
+    for (let t = t0 + BEAT, i = 0; t < t1; t += BEAT * 2, i++) k.push([t, { opacity: 1, transform: `${flip} rotate(${i % 2 ? -1.8 : 1.8}deg)` }]);
+    track(p, k, 'ease-in-out');
+  });
+  const trotter = (parent, t0, t1, bottom) => {                // Chicken Nugget's silhouette, two steps to the beat
+    const d = el('img', { position: 'absolute', left: 0, bottom: bottom + 'px', width: '120px', zIndex: 3 }, parent, { src: 'layers/walker.png', alt: '' });
+    const k = [];
+    for (let t = t0, i = 0; t <= t1; t += BEAT / 2, i++) k.push([t, { transform: `translate(${-160 + (t - t0) / (t1 - t0) * (W + 200)}px, ${i % 2 ? -9 : 0}px)` }]);
+    track(d, k, 'linear');
+  };
+  // The title sequence, cut to the theme song (120 BPM: a beat every half second).
+  //   0:02 Blake!   0:04 And Kat!   0:06 And Chicken Nugget!   0:08 all three   0:12 the title
+  const intro = $('intro'), I = scene.intro, TB = 0.5;
+  intro.innerHTML = ''; intro.style.display = 'block';
+  track(intro, [[0, { opacity: 1 }], [I.end - 0.7, { opacity: 1 }], [I.end, { opacity: 0 }]], 'linear');
+  const pop = (node, t, rot = 0) => track(node, [[t, { opacity: 0, transform: `scale(.3) rotate(${rot - 9}deg)` }], [t + 0.12, { opacity: 1, transform: `scale(1.14) rotate(${rot + 2}deg)` }], [t + 0.3, { opacity: 1, transform: `scale(1) rotate(${rot}deg)` }]], 'ease-out');
+  const bounce = (node, t0, t1, amp, phase = 0) => { const k = []; for (let t = t0, i = phase; t <= t1; t += TB / 2, i++) k.push([t, { transform: `translateY(${i % 2 ? -amp : 0}px)` }]); k.push([t1 + 0.3, { transform: 'translateY(0)' }]); track(node, k, 'ease-in-out'); };
+  const show = (node, t0, t1) => track(node, [[t0 - 0.01, { opacity: 0 }], [t0, { opacity: 1 }], [t1, { opacity: 1 }], [t1 + 0.01, { opacity: 0 }]], 'linear');
+  const full = { position: 'absolute', inset: 0, overflow: 'hidden' };
+  // the pick-up: stars pop one by one up the scale
+  const pre = el('div', Object.assign({ background: '#FDFAF4' }, full), intro); show(pre, 0, 2.0);
+  for (let j = 0; j < 7; j++) {
+    const s = el('div', { position: 'absolute', left: 300 + j * 200 + 'px', top: 620 - j * 60 + 'px', fontSize: 110 + j * 12 + 'px', color: ['#D8402F', '#F29AAE', '#F5D45E', '#2FA866', '#2B4FA0'][j % 5], opacity: 0 }, pre);
+    s.textContent = '✦'; pop(s, j * 0.25, j * 9);
+  }
+  function panel(t0, t1, bg, img, w, name, role, side) {
+    const other = side === 'left' ? 'right' : 'left';
+    const p = el('div', Object.assign({ background: bg, backgroundSize: 'cover' }, full), intro); show(p, t0, t1);
+    const slide = el('div', { position: 'absolute', bottom: '-30px', [side]: '170px', width: w + 'px' }, p);
+    track(slide, [[t0, { transform: `translateX(${side === 'left' ? -1000 : 1000}px)` }], [t0 + 0.34, { transform: 'translateX(0)' }]], 'cubic-bezier(.2,1.3,.4,1)');
+    bounce(el('img', { width: '100%' }, slide, { src: `layers/${img}.png`, alt: '' }), t0 + 0.5, t1, 26);
+    const text = el('div', { position: 'absolute', top: '250px', [other]: '150px', width: '780px', textAlign: 'center' }, p);
+    const plate = el('div', { display: 'inline-block', padding: '26px 54px 14px', fontSize: name.length > 6 ? '120px' : '200px', whiteSpace: 'normal', opacity: 0 }, text);
+    plate.className = 'plate hand'; plate.innerHTML = name; pop(plate, t0 + 0.04, side === 'left' ? 3 : -3);
+    const sub = el('div', { marginTop: '50px', fontFamily: '"La Belle Aurore", cursive', fontSize: '76px', color: '#1F1C1B', opacity: 0 }, text);
+    sub.textContent = role; pop(sub, t0 + TB * 2);
+  }
+  panel(2.0, 4.0, '#BBD6F5 url(layers/paper-blue.png)', 'ep-blake', 700, 'Blake', 'the motivator', 'left');
+  panel(4.0, 6.0, '#F7E3A8', 'ep-kat', 700, 'Kat', 'the reason', 'right');
+  panel(6.0, 8.0, '#F4AEB8 url(layers/wall-pink.png)', 'ep-dog', 520, 'Chicken<br>Nugget', 'the champion', 'left');
+  // all three, and the title
+  const all = el('div', Object.assign({ background: '#FDFAF4' }, full), intro); show(all, 8.0, I.end + 1);
+  palms(all, 8.0, I.end);
+  const names = el('div', { position: 'absolute', left: 0, right: 0, top: '70px', textAlign: 'center', fontSize: '170px', color: '#D8402F', opacity: 0 }, all);
+  names.className = 'hand'; names.innerHTML = 'Blake &amp; Kat'; pop(names, 8.0);
+  [['ep-blake', { left: '300px', bottom: '-30px', width: '430px' }, 8.0, 0, 30], ['ep-dog', { left: '835px', bottom: '30px', width: '250px' }, 8.5, 1, 54], ['ep-kat', { right: '300px', bottom: '-30px', width: '430px' }, 9.0, 0, 30]].forEach(([img, css, t, phase, amp]) => {
+    const w = el('div', Object.assign({ position: 'absolute', transformOrigin: '50% 100%', opacity: 0 }, css), all); pop(w, t);
+    bounce(el('img', { width: '100%' }, w, { src: `layers/${img}.png`, alt: '' }), t + 0.5, 15.0, amp, phase);
+  });
+  const row = el('div', { position: 'absolute', left: 0, right: 0, top: '290px', display: 'flex', justifyContent: 'center' }, all);
+  const title = el('div', { padding: '24px 60px 16px', fontSize: '130px', opacity: 0 }, row);
+  title.className = 'plate hand'; title.innerHTML = 'The Point-Two<small style="display:block;font-size:.3em;color:#1F1C1B;letter-spacing:.3em;margin-top:6px">Episode One</small>';
+  pop(title, 12.0, -2);
+  track(title, [[14.0, { transform: 'scale(1) rotate(-2deg)' }], [14.12, { transform: 'scale(1.1) rotate(-2deg)' }], [14.5, { transform: 'scale(1) rotate(-2deg)' }]], 'ease-out');
+
+  /* =====================  THE STREET: warm-up, start, the run, the finish  ===================== */
+  const S0 = scene.warmup.start, S1 = scene.finish.end, RUN = EP.runStart, FIN = M.finish + 0.2;
+  const QD = 6500;                                             // screen pixels per 0.05 mile
+  const knots = [[S0, 0], [RUN, 0], [M.m1, QD], [M.m2, QD * 2], [M.m3, QD * 3], [FIN, QD * 4], [FIN + 1.6, QD * 4 + 260], [S1 + 1, QD * 4 + 260]];
+  const END_D = QD * 4 + 260;
+  const distAt = (t) => { for (let i = 1; i < knots.length; i++) if (t <= knots[i][0]) { const [t0, d0] = knots[i - 1], [t1, d1] = knots[i]; return d0 + (d1 - d0) * (t - t0) / (t1 - t0); } return END_D; };
+  const scroll = (node, fn) => track(node, knots.map(([t, d]) => [t, fn(d)]), 'linear');
+  const world = [];                                            // things standing on the route: placed each frame, hidden when far off
+  const place = (node, x) => world.push({ node, x });
+
+  const st = shot(S0 - 0.4, S1);
+  st.img('ep-sky', 0, 0, 1920);
+  const midTile = st.tile('ep-mid'), mansions = st.tile('ep-mansions');
+  scroll(midTile, (d) => ({ backgroundPositionX: -d * 0.3 + 'px' }));
+  scroll(mansions, (d) => ({ backgroundPositionX: -d * 0.42 + 'px' }));          // the nice houses, between 0.05 and halfway
+  track(mansions, [[M.h0 - 1.2, { opacity: 0 }], [M.h0 - 0.2, { opacity: 1 }], [M.m2 - 1.6, { opacity: 1 }], [M.m2 - 0.6, { opacity: 0 }]], 'linear');
+  track(midTile, [[M.h0 - 1.2, { opacity: 1 }], [M.h0 - 0.2, { opacity: 0 }], [M.m2 - 1.6, { opacity: 0 }], [M.m2 - 0.6, { opacity: 1 }]], 'linear');
+  const banner = (text, worldX) => {
+    const b = el('div', {}, st.board); b.className = 'banner';
+    b.innerHTML = `<div class="post" style="left:20px"></div><div class="post" style="right:20px"></div><div class="flag hand">${text}</div>`;
+    place(b, worldX);
+    return b;
+  };
+  banner('Start', 230);
+  banner('Finish &middot; 0.2 mi', END_D + 230);
+  st.char('B', 'ep-blake', 330, 296, 460, MOUTH.B);
+  st.char('K', 'ep-kat', 810, 296, 460, MOUTH.K);
+  st.char('N', 'ep-dog', 1320, 596, 216, MOUTH.N);
+  st.img('ep-hedge', 0, 0, 1920);
+  scroll(st.tile('ep-hedge-fl'), (d) => ({ backgroundPositionX: -d + 'px' }));
+  [['0.05 mi', 1], ['Halfway<br>0.1 mi', 2], ['The wall<br>0.15 mi', 3]].forEach(([text, n]) => {
+    const p = el('div', {}, st.board); p.className = 'signpost';
+    p.innerHTML = `<div class="post"></div><div class="plate hand">${text}</div>`;
+    place(p, QD * n + 1560);
+  });
+  const tape = el('div', { position: 'absolute', left: 0, top: '640px', width: '1300px', height: '16px', background: '#D8402F', border: '3px solid #1F1C1B' }, st.board);
+  place(tape, END_D + 230);
+  // running: everybody bobs in step with the footsteps; Chicken Nugget hops twice as high
+  [['B', 0, 16], ['K', 1, 14], ['N', 0, 46]].forEach(([who, phase, amp]) => {
+    const k = [[S0, { transform: 'translateY(0)' }], [RUN, { transform: 'translateY(0)' }]];
+    for (let t = RUN + 0.155, i = phase; t < FIN + 1.4; t += 0.155, i++) k.push([t, { transform: `translateY(${i % 2 ? 0 : -amp}px) rotate(${i % 2 ? 0 : (who === 'N' ? 4 : 1.2)}deg)` }]);
+    k.push([FIN + 1.7, { transform: 'translateY(0) rotate(0deg)' }]);
+    for (let t = Math.max(FIN + 1.9, EP.finishEnd + 0.2), i = 0; i < 6; t += 0.24, i++) k.push([t, { transform: `translateY(${i % 2 ? 0 : -34}px)` }]);   // a little victory jump
+    track(st.chars[who].bob, k, 'ease-in-out');
+  });
+  const STREET = { wide: [960, 560, 1], two: [880, 600, 1.16], B: [690, 560, 1.4], K: [1040, 560, 1.4], dog: [1310, 705, 1.56] };
+  st.cut(linesIn('warmup', 'start', 'run', 'finish'), STREET, chooser);
+  const r = rng(5), colours = ['#D8402F', '#F29AAE', '#F5D45E', '#2FA866', '#BBD6F5'];
+  for (let i = 0; i < 46; i++) {
+    const c = el('div', { left: 80 + r() * 1760 + 'px', background: colours[i % 5] }, st.board); c.className = 'confetti';
+    const t = EP.finishEnd + r() * 1.4;
+    track(c, [[t, { opacity: 0, transform: 'translateY(-40px) rotate(0deg)' }], [t + 0.2, { opacity: 1, transform: 'translateY(40px) rotate(40deg)' }], [t + 3.4, { opacity: 1, transform: `translate(${(r() - 0.5) * 200}px, 900px) rotate(${(r() - 0.5) * 900}deg)` }], [t + 3.8, { opacity: 0, transform: 'translateY(940px)' }]], 'linear');
+  }
+  track($('hud'), [[scene.start.start, { opacity: 0 }], [scene.start.start + 0.6, { opacity: 1 }], [S1 - 0.5, { opacity: 1 }], [S1, { opacity: 0 }]], 'linear');
+
+  /* =====================  THE REWARD  ===================== */
+  const T = scene.treats;
+  const tr = shot(T.start - 0.4, T.end);
+  tr.img('ep-parlour', 0, 0, 1920);
+  tr.char('B', 'ep-blake', 300, 236, 480, MOUTH.B);
+  tr.char('K', 'ep-kat', 1140, 236, 480, MOUTH.K);
+  tr.char('N', 'ep-dog', 852, 500, 216, MOUTH.N);
+  tr.img('ep-table', 0, 0, 1920);
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 1920 1080'); Object.assign(svg.style, { position: 'absolute', left: 0, top: 0, width: '1920px', height: '1080px' });
+  svg.innerHTML = [0, 1, 2].map((i) => `<path d="M${900 + i * 56} 770 q-16 -26 0 -50 q16 -24 0 -50" fill="none" stroke="#1F1C1B" stroke-width="5" stroke-linecap="round" opacity="0"/>`).join('');
+  tr.board.appendChild(svg);
+  svg.querySelectorAll('path').forEach((p, i) => {             // warm: steam curls off the cookies
+    const k = [];
+    for (let t = T.start + i * 0.5; t < T.end; t += 2.4) k.push([t, { opacity: 0, transform: 'translateY(14px)' }], [t + 0.7, { opacity: 0.8, transform: 'translateY(0)' }], [t + 2.3, { opacity: 0, transform: 'translateY(-26px)' }]);
+    track(p, k, 'ease-out');
+  });
+  [['B', 0], ['K', 1], ['N', 2]].forEach(([who, ph]) => {      // contented swaying, in time with the music
+    const k = [];
+    for (let t = T.start, i = ph; t < T.end + 1; t += BEAT * 2, i++) k.push([t, { transform: `rotate(${i % 2 ? -1.1 : 1.1}deg)` }]);
+    track(tr.chars[who].bob, k, 'ease-in-out');
+  });
+  tr.cut(linesIn('treats'), { wide: [960, 560, 1], two: [960, 590, 1.1], B: [680, 520, 1.4], K: [1240, 520, 1.4], dog: [960, 700, 1.6] }, chooser);
+  const sign = el('div', { position: 'absolute', left: '50%', top: '330px', padding: '22px 46px 16px', fontSize: '84px', opacity: 0 });
+  sign.className = 'plate hand'; sign.textContent = 'Refreshments';
+  stage.insertBefore(sign, $('intro'));
+  track(sign, [[T.start - 0.2, { opacity: 0, transform: 'translateX(-50%) scale(.8) rotate(-3deg)' }], [T.start + 0.2, { opacity: 1, transform: 'translateX(-50%) scale(1.04) rotate(-2deg)' }], [T.start + 2.2, { opacity: 1, transform: 'translateX(-50%) scale(1) rotate(-2deg)' }], [T.start + 2.6, { opacity: 0, transform: 'translateX(-50%) scale(1) rotate(-2deg)' }]], 'ease-out');
+
+  /* =====================  THE DRIVES HOME  ===================== */
+  function drive(id, car, seats, label) {
+    const sc = scene[id], s = shot(sc.start - 0.4, sc.end), dur = sc.end - sc.start + 1.2;
+    s.img('ep-sky', 0, 0, 1920);
+    track(s.tile('ep-mid'), [[sc.start - 0.4, { backgroundPositionX: '0px' }], [sc.end + 0.8, { backgroundPositionX: -dur * 240 + 'px' }]], 'linear');
+    el('div', { position: 'absolute', left: 0, top: '790px', width: '1920px', height: '60px', background: '#3E9B63', borderTop: '6px solid #1F1C1B' }, s.board);
+    el('div', { position: 'absolute', left: 0, top: '840px', width: '1920px', height: '240px', background: '#CFC6B8', borderTop: '6px solid #1F1C1B' }, s.board);
+    const dashes = el('div', { position: 'absolute', left: 0, top: '935px', width: '1920px', height: '14px', backgroundImage: 'repeating-linear-gradient(90deg, #FDFAF4 0 130px, transparent 130px 290px)' }, s.board);
+    track(dashes, [[sc.start - 0.4, { backgroundPositionX: '0px' }], [sc.end + 0.8, { backgroundPositionX: -dur * 1160 + 'px' }]], 'linear');
+    const wrap = el('div', { position: 'absolute', left: 0, top: 0, width: '1920px', height: '1080px' }, s.board);
+    seats.forEach(([who, img, x, y, w]) => wrap.appendChild(s.char(who, img, x, y, w, MOUTH[who]).box));
+    s.img(car, 300, 300, 1320, wrap);
+    jog(wrap, sc.start - 0.4, sc.end + 0.8, 5);
+    track(s.board, [[sc.start - 0.4, { transform: cam([960, 560, 1]) }], [sc.end + 0.8, { transform: cam([980, 580, 1.1]) }]], 'linear');
+    tag(s, label);
+    return s;
+  }
+  drive('driveK', 'ep-suv', [['K', 'ep-kat', 955, 352, 250], ['N', 'ep-dog', 760, 398, 150]], 'Kat &middot; in the G-Wagon');
+  {
+    const s = drive('driveB', 'ep-coupe', [['B', 'ep-blake', 880, 396, 250]], 'Blake &middot; in the new Mercedes');
+    const p = el('div', { position: 'absolute', left: '1240px', top: '172px', padding: '10px 26px 6px', fontSize: '40px', rotate: '2deg', opacity: 0 }, s.board);
+    p.className = 'plate hand'; p.innerHTML = 'Call two: classified';
+    track(p, [[M.call2 - 0.3, { opacity: 0 }], [M.call2, { opacity: 1 }]], 'linear');
+  }
+
+  /* =====================  THAT NIGHT  ===================== */
+  {
+    const sc = scene.night, s = shot(sc.start - 0.4, sc.end);
+    s.img('night-bg', 0, 0, 1920); s.img('moon', 890, 96, 140);
+    track(s.board, [[sc.start - 0.4, { transform: cam([960, 560, 1]) }], [sc.end + 0.8, { transform: cam([960, 590, 1.1]) }]], 'linear');
+    const asked = EP.lines.filter((l) => l.scene === 'night' && l.text.includes('talk on the phone'));
+    [[asked.find((l) => l.who === 'B'), 170], [asked.find((l) => l.who === 'K'), 1110]].forEach(([ln, x]) => {
+      const p = el('div', { position: 'absolute', left: x + 'px', top: '236px', width: '640px', minHeight: '104px', boxSizing: 'border-box', padding: '18px 22px 10px', fontSize: '38px', whiteSpace: 'normal' }, s.board);
+      p.className = 'plate hand';
+      perFrame.push((t) => {                                   // three dots while they think about it, then the message types itself
+        if (t < s.tin - 0.1 || t > s.tend) return;
+        const f = Math.max(0, Math.min(1, (t - ln.start) / (ln.end - ln.start)));
+        p.textContent = t < ln.start ? ['.', '. .', '. . .'][Math.floor(t * 2.5) % 3] : ln.text.slice(0, Math.ceil(ln.text.length * f));
+      });
+    });
+  }
+
+  /* =====================  OTHER PERSPECTIVES  =====================
+     Cutaways laid over the main shots for particular lines: a map from above, the view
+     from across the street, a split screen, Chicken Nugget's own point of view, and the
+     table seen from the ceiling. */
+  function angle(frag, extra = 0) {
+    const a = EP.lines.findIndex((l) => l.text.includes(frag)), b = a + extra;
+    const tin = EP.lines[a].start - 0.12, tout = (EP.lines[b + 1] ? EP.lines[b + 1].start : DUR) - 0.125;
+    const s = shot(tin, tout, true); s.tend = tout; s.board.style.transform = cam([960, 540, 1]);
+    return s;
+  }
+  function tag(s, text) { const p = el('div', { position: 'absolute', left: '150px', top: '210px', padding: '10px 26px 6px', fontSize: '40px', rotate: '-2deg' }, s.board); p.className = 'plate hand'; p.innerHTML = text; }
+  function jog(node, t0, t1, amp, ph = 0) { const k = []; for (let t = t0, i = ph; t < t1 + 0.2; t += 0.155, i++) k.push([t, { transform: `translateY(${i % 2 ? 0 : -amp}px)` }]); track(node, k, 'ease-in-out'); }
+  const SVGNS = 'http://www.w3.org/2000/svg';
+
+  // 1. the route from above, with three dots making their way along it
+  ['Zero point zero five miles', 'Zero point one five'].forEach((frag) => {
+    const s = angle(frag);
+    const svg = document.createElementNS(SVGNS, 'svg'); svg.setAttribute('viewBox', '0 0 1920 1080');
+    Object.assign(svg.style, { position: 'absolute', left: 0, top: 0, width: '1920px', height: '1080px' });
+    const route = 'M250 830 C560 830 520 430 840 430 S1120 770 1350 700 S1540 350 1700 330';
+    let town = '';
+    [[330, 520], [600, 250], [1010, 720], [1180, 300], [1560, 760], [860, 200]].forEach(([x, y], i) => { town += i % 2 ? `<rect x="${x}" y="${y}" width="150" height="120" fill="#F7AEB9" stroke="#1F1C1B" stroke-width="6"/><path d="M${x} ${y} L${x + 150} ${y + 120} M${x + 150} ${y} L${x} ${y + 120}" stroke="#E98659" stroke-width="6"/>` : `<circle cx="${x}" cy="${y}" r="62" fill="#3E9B63" stroke="#1F1C1B" stroke-width="6"/><circle cx="${x + 110}" cy="${y + 40}" r="44" fill="#2F8F5B" stroke="#1F1C1B" stroke-width="6"/>`; });
+    svg.innerHTML = `<rect width="1920" height="1080" fill="#BFE3BE"/>${town}
+      <path d="${route}" fill="none" stroke="#FDFAF4" stroke-width="74" stroke-linecap="round"/><path class="r" d="${route}" fill="none" stroke="#1F1C1B" stroke-width="6" stroke-dasharray="4 28" stroke-linecap="round"/>
+      <circle class="d" r="27" fill="#2FA866" stroke="#1F1C1B" stroke-width="6"/><circle class="d" r="27" fill="#2A2529" stroke="#FDFAF4" stroke-width="6"/><circle class="d" r="21" fill="#B8714A" stroke="#1F1C1B" stroke-width="6"/>`;
+    s.board.appendChild(svg);
+    [['Start', 150, 880], ['Finish', 1590, 190]].forEach(([txt, x, y]) => { const p = el('div', { position: 'absolute', left: x + 'px', top: y + 'px', padding: '8px 22px 4px', fontSize: '44px' }, s.board); p.className = 'plate hand'; p.textContent = txt; });
+    tag(s, 'From above');
+    const path = svg.querySelector('.r'), dots = [...svg.querySelectorAll('.d')];
+    perFrame.push((t, frac) => {
+      if (t < s.tin - 0.1 || t > s.tend) return;
+      const L = path.getTotalLength();
+      dots.forEach((d, i) => { const p = path.getPointAtLength(L * Math.min(1, Math.max(0, frac + [-0.012, 0.012, 0.06][i]))); d.setAttribute('cx', p.x); d.setAttribute('cy', p.y + [-20, 20, 0][i]); });
+    });
+  });
+
+  // 2. from across the street: silhouettes against the morning sun
+  ["And they're off!", 'Observe. Her pace has doubled.'].forEach((frag, n) => {
+    const s = angle(frag); s.el.style.background = '#F5D45E';
+    el('div', { position: 'absolute', left: '1280px', top: '210px', width: '320px', height: '320px', borderRadius: '50%', background: '#FDFAF4' }, s.board);
+    for (let i = 0; i < 4; i++) {
+      const p = el('img', { position: 'absolute', left: 0, bottom: '300px', height: (560 + (i % 2) * 120) + 'px' }, s.board, { src: `layers/sil-palm${i % 2 ? '-b' : ''}.png`, alt: '' });
+      track(p, [[s.tin, { transform: `translateX(${700 + i * 620}px)` }], [s.tend, { transform: `translateX(${-900 + i * 620}px)` }]], 'linear');
+    }
+    const pack = el('div', { position: 'absolute', left: 0, bottom: '250px', width: '1100px', height: '500px' }, s.board);
+    track(pack, [[s.tin, { transform: 'translateX(120px)' }], [s.tend, { transform: 'translateX(620px)' }]], 'linear');
+    [['sil-blake', n ? 0 : 330, 330, 20, 0], ['sil-kat', n ? 380 : 0, 330, 18, 1], ['walker', 800, 190, 40, 0]].forEach(([img, x, w, amp, ph]) =>
+      jog(el('img', { position: 'absolute', left: x + 'px', bottom: img === 'walker' ? '60px' : 0, width: w + 'px' }, pack, { src: `layers/${img}.png`, alt: '' }), s.tin, s.tend, amp, ph));
+    el('div', { position: 'absolute', left: 0, right: 0, bottom: 0, height: '330px', background: '#33503F', borderTop: '6px solid #1F1C1B' }, s.board);
+    tag(s, 'From across the street');
+  });
+
+  // 3. split screen, for the argument about when exactly "three" is
+  {
+    const s = angle('Wait. Is it on three', 3);
+    const half = (left, bg) => el('div', { position: 'absolute', left: left + 'px', top: 0, width: '960px', height: '1080px', background: bg, overflow: 'hidden' }, s.board);
+    half(0, '#BBD6F5').appendChild(s.char('B', 'ep-blake', 150, 250, 700, MOUTH.B).box);
+    half(960, '#F7E3A8').appendChild(s.char('K', 'ep-kat', 110, 250, 700, MOUTH.K).box);
+    el('div', { position: 'absolute', left: '953px', top: 0, width: '14px', height: '1080px', background: '#1F1C1B' }, s.board);
+  }
+
+  // 4. Nugget-cam: looking up at the two of them
+  {
+    const s = angle('How is the dog winning?', 1);
+    s.img('ep-sky', 0, 0, 1920);
+    const b = s.char('B', 'ep-blake', 230, 240, 780, MOUTH.B), k = s.char('K', 'ep-kat', 910, 240, 780, MOUTH.K);
+    Object.assign(b.bob.style, { transformOrigin: '50% 100%', transform: 'rotate(9deg)' }); Object.assign(k.bob.style, { transformOrigin: '50% 100%', transform: 'rotate(-9deg)' });
+    s.img('ep-dog', 660, 790, 600);                              // a topknot and two ears, at the bottom of frame
+    tag(s, '<span style="color:#D8402F">&#9679;</span> Nugget-cam');
+  }
+
+  // 5. the table, from the ceiling
+  ['The post-race recovery meal', 'They are sharing a spoon'].forEach((frag) => {
+    const s = angle(frag); s.el.style.background = '#3E9B63';
+    const c = (css, parent) => el('div', Object.assign({ position: 'absolute', borderRadius: '50%', border: '6px solid #1F1C1B', boxSizing: 'border-box' }, css), parent || s.board);
+    c({ left: '240px', top: '400px', width: '290px', height: '270px', background: '#4A3426', boxShadow: 'inset 0 0 0 26px #4A3426, inset 0 0 0 40px #DCE3EA' });            // Blake, headband and all
+    c({ left: '1390px', top: '390px', width: '290px', height: '320px', background: '#1E1A1C' });                                                                                 // Kat
+    c({ left: '875px', top: '870px', width: '170px', height: '150px', background: '#B8714A' });                                                                                 // a hopeful poodle
+    const table = c({ left: '510px', top: '140px', width: '900px', height: '800px', background: '#F9CDD3' });
+    const sway = []; for (let t = s.tin, i = 0; t < s.tend + 1; t += 1.2, i++) sway.push([t, { transform: `rotate(${i % 2 ? -2.5 : 2.5}deg)` }]);
+    track(table, sway, 'ease-in-out');
+    c({ left: '295px', top: '225px', width: '310px', height: '310px', background: '#FFFDF9' }, table);
+    [[330, 270], [440, 262], [470, 370], [350, 390], [400, 320]].forEach(([x, y]) => { const k = c({ left: x + 'px', top: y + 'px', width: '112px', height: '112px', background: '#D9A066' }, table); [[26, 30], [62, 22], [40, 62], [72, 66]].forEach(([dx, dy]) => el('div', { position: 'absolute', left: dx + 'px', top: dy + 'px', width: '14px', height: '14px', borderRadius: '50%', background: '#5A2E1A' }, k)); });
+    [70, 640].forEach((x) => { const bowl = c({ left: x + 'px', top: '300px', width: '200px', height: '200px', background: '#DCEBF8' }, table); [['#F4A9B8', 24, 30], ['#FBF3E4', 92, 36], ['#B8714A', 56, 92]].forEach(([col, dx, dy]) => c({ left: dx + 'px', top: dy + 'px', width: '84px', height: '84px', background: col }, bowl)); });
+    c({ left: '395px', top: '600px', width: '120px', height: '120px', background: '#FFFFFF' }, table);
+    tag(s, 'From above');
+  });
+
+  // 6. the nice houses, admired properly
+  [['Look at that one', -40, -560], ['with the columns', -620, -1250]].forEach(([frag, x0, x1]) => {
+    const s = angle(frag);
+    s.img('ep-sky', 0, 0, 1920);
+    const m = s.tile('ep-mansions'); Object.assign(m.style, { transformOrigin: '50% 74%', transform: 'scale(1.5)' });
+    track(m, [[s.tin, { backgroundPositionX: x0 + 'px' }], [s.tend, { backgroundPositionX: x1 + 'px' }]], 'linear');
+    tag(s, 'The nice houses');
+  });
+
+  /* =====================  OUTRO  ===================== */
+  const outro = $('outro'), O = scene.outro;
+  track(outro, [[O.start - 0.5, { opacity: 0 }], [O.start + 0.5, { opacity: 1 }]], 'linear');
+  palms(outro, O.start, DUR);
+  [['o1', 1.0], ['o2', 6.4], ['o3', 7.4], ['o4', 8.4], ['o5', 9.4], ['o6', 12.0], ['o7', 14.6]].forEach(([id, dt]) => rise(id, O.start + dt));
+  trotter(outro, O.start + 1, DUR, 70);
+  const curtain = el('div', { position: 'absolute', inset: 0, background: '#FDFAF4', opacity: 0 });
+  stage.insertBefore(curtain, $('pink'));
+  track(curtain, [[DUR - 1.6, { opacity: 0 }], [DUR - 0.1, { opacity: 1 }]], 'linear');
+
+  /* ---------- per-frame: mouths, captions, the odometer ---------- */
+  const cap = $('cap'), capWho = cap.querySelector('.who'), capSay = cap.querySelector('.say');
+  const miles = $('miles'), dogIcon = $('route').querySelector('img'), grain = $('grain');
+  let shown = -2;
+  function apply(t) {
+    for (const a of anims) a.currentTime = t * 1000;
+    for (const sh of shots) sh.el.style.display = t >= sh.tin - 0.05 && t <= sh.tend ? 'block' : 'none';
+    const fr = Math.min(Math.round(t * FPS), EP.mouth.B.length - 1);
+    grain.style.backgroundPosition = `${(fr * 37) % 300}px ${(fr * 91) % 300}px`;
+    const li = EP.lines.findIndex((l) => t >= l.start - 0.06 && t <= l.end + 0.35);
+    if (li !== shown) {
+      shown = li;
+      const l = EP.lines[li];
+      const visible = l && l.scene !== 'intro' && l.scene !== 'outro';
+      capWho.textContent = visible ? l.name : ''; capSay.textContent = visible ? l.text : '';
+    }
+    for (const sh of shots) for (const who in sh.chars) {
+      const v = EP.mouth[who][fr], c = sh.chars[who];
+      c.mouth.style.opacity = v > 0.06 ? 1 : 0;
+      c.mouth.style.transform = `scaleY(${(0.3 + 0.7 * v).toFixed(3)})`;
+      c.box.style.transform = `scale(${(1 + 0.02 * Math.min(1, v * 2)).toFixed(4)})`;
+    }
+    const dist = distAt(Math.max(t, S0));
+    for (const o of world) {
+      const x = o.x - dist, near = x > -1700 && x < 2200;
+      o.node.style.display = near ? '' : 'none';
+      if (!near) continue;
+      const fall = o.node === tape ? Math.max(0, t - FIN) : 0;       // the tape drops as they cross it
+      o.node.style.transform = `translate(${x.toFixed(1)}px, ${(fall * fall * 900).toFixed(1)}px) rotate(${(fall * 14).toFixed(2)}deg)`;
+      if (o.node === tape) o.node.style.opacity = fall > 0.7 ? 0 : 1;
+    }
+    const frac = Math.min(1, dist / (QD * 4));
+    miles.textContent = (0.2 * frac).toFixed(2);
+    dogIcon.style.left = frac * 216 + 'px';
+    for (const fn of perFrame) fn(t, frac);
+  }
+  window.seek = async (t) => {
+    apply(t);
+    const imgs = [...document.images].filter((i) => i.offsetParent !== null);
+    await Promise.all(imgs.map((i) => i.decode().catch(() => {})));
+    await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
+  };
+  window.ready = (async () => {
+    await document.fonts.ready;
+    await Promise.all(['"Covered By Your Grace"', '"La Belle Aurore"'].map((f) => document.fonts.load(`40px ${f}`)));
+    const urls = [...new Set([...document.images].map((i) => i.src).concat(['ep-mid', 'ep-hedge-fl'].map((n) => new URL(`layers/${n}.png`, location.href).href)))];
+    await Promise.all(urls.map((u) => new Promise((res) => { const i = new Image(); i.onload = i.onerror = res; i.src = u; })));
+    await window.seek(0);
+    return DUR;
+  })();
+
+  if (!RENDER) {
+    const fit = () => { const k = Math.min(innerWidth / W, innerHeight / H); stage.style.transform = `translate(${(innerWidth - W * k) / 2}px, ${(innerHeight - H * k) / 2}px) scale(${k})`; };
+    addEventListener('resize', fit); fit();
+    const audio = $('audio');
+    $('play').addEventListener('click', async () => {
+      $('play').style.display = 'none';
+      await window.ready; audio.currentTime = +(Q.get('t') || 0); await audio.play();
+      const loop = () => { apply(Math.min(audio.currentTime, DUR)); if (!audio.ended) requestAnimationFrame(loop); };
+      loop();
+    });
+  }
+})();
+</script>
+</body>
+</html>
