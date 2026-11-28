@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blake &amp; Kat — Episode Two: Starting to Talk</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Covered+By+Your+Grace&family=La+Belle+Aurore&display=swap" rel="stylesheet">
+<style>
+  /* Same stage and same rules as film.html: nothing plays, everything is scrubbed
+     to a time by seek(t). This one is driven by episode/episode.json, which says
+     when every line is spoken and how open each mouth is on every frame. */
+  html, body { margin: 0; background: #1b1a19; overflow: hidden; height: 100%; }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; overflow: hidden; background: #FDFAF4; }
+  #picture, #shift, .shot, .card, #grain, #pink { position: absolute; inset: 0; }
+  .shot { display: none; overflow: hidden; background: #FDFAF4; }
+  .board { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  .board > *, .abs { position: absolute; }
+  img { display: block; }
+  .tile { left: 0; top: 0; width: 1920px; height: 1080px; background-size: 1920px 1080px; background-repeat: repeat-x; }
+  #line { position: absolute; border: 5px solid #1F1C1B; border-radius: 3px; transform: rotate(-.15deg); }
+  #pink { border: 22px solid #F29AAE; box-shadow: inset 0 0 0 4px #1F1C1B; pointer-events: none; }
+  #grain { pointer-events: none; opacity: .5; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .3 0 0 0 0 .22 0 0 0 .26 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .hand { font-family: "Covered By Your Grace", "Marker Felt", cursive; text-transform: uppercase; letter-spacing: .13em; line-height: 1.12; }
+
+  /* characters: a drawing, a mouth that opens with the voice */
+  .char { position: absolute; transform-origin: 50% 100%; }
+  .char img { width: 100%; }
+  .mouth { position: absolute; background: #6E1F2B; border: 4px solid #1F1C1B; border-radius: 50%; opacity: 0; }
+
+  /* captions, signs, HUD */
+  #cap { position: absolute; left: 110px; right: 110px; text-align: center; }
+  #cap .who { display: block; font-size: 34px; color: #1F1C1B; margin-bottom: 8px; }
+  #cap .say { display: block; font-size: 44px; color: #D8402F; text-wrap: balance; }
+  .plate { background: #FDFAF4; border: 5px solid #1F1C1B; border-radius: 10px; box-shadow: 0 0 0 9px #F2A25C, 0 0 0 13px #2B4FA0; color: #D8402F; text-align: center; white-space: nowrap; }
+  .post { position: absolute; bottom: 0; width: 14px; background: #1F1C1B; }
+  .signpost { position: absolute; left: 0; bottom: 0; width: 300px; height: 330px; }
+  .signpost .post { left: 143px; height: 250px; }
+  .signpost .plate { position: absolute; left: 0; right: 0; top: 0; padding: 14px 8px 10px; font-size: 40px; white-space: normal; rotate: -2deg; }
+  .banner { position: absolute; left: 0; top: 176px; width: 1300px; height: 904px; }
+  .banner .post { height: 830px; }
+  .banner .flag { position: absolute; left: 0; right: 0; top: 0; height: 110px; display: grid; place-items: center; background: #FDFAF4; border: 5px solid #1F1C1B; font-size: 64px; color: #D8402F; background-image: repeating-linear-gradient(90deg, #F29AAE 0 26px, transparent 26px 52px); background-size: 100% 16px; background-repeat: no-repeat; background-position: 0 100%; }
+  #hud { position: absolute; right: 120px; top: 108px; padding: 12px 26px 8px; font-size: 46px; opacity: 0; }
+  #hud small { display: block; font-size: 22px; color: #1F1C1B; }
+  #route { position: relative; width: 260px; height: 34px; margin-top: 4px; border-bottom: 5px dotted #1F1C1B; }
+  #route img { position: absolute; bottom: 2px; left: 0; width: 44px; }
+  .confetti { position: absolute; top: 0; width: 18px; height: 26px; border-radius: 4px; opacity: 0; }
+
+  .card { background: #FDFAF4; display: grid; place-items: center; text-align: center; opacity: 0; }
+  .card > div { position: relative; z-index: 2; }
+  .card p { margin: 0; opacity: 0; }
+  .card .xl { font-size: 150px; color: #D8402F; }
+  .card .lg { font-size: 96px; color: #1F1C1B; }
+  .card .md { font-size: 44px; color: #1F1C1B; }
+  .card .sm { font-size: 32px; color: #1F1C1B; }
+  .card .red { color: #D8402F; }
+  #cap.thinking .say { font-family: "La Belle Aurore", cursive; text-transform: none; letter-spacing: 0; font-size: 52px; color: #33503F; }
+  .card .script { font-family: "La Belle Aurore", cursive; text-transform: none; letter-spacing: 0; font-size: 58px; color: #33503F; }
+  .sil { position: absolute; bottom: 0; transform-origin: 50% 100%; opacity: 0; }
+
+  #play { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(27,26,25,.86); color: #FDFAF4; font: 500 15px sans-serif; letter-spacing: .3em; text-transform: uppercase; cursor: pointer; z-index: 10; }
+  .render #play { display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="picture"><div id="shift"></div></div>
+  <div id="line"></div>
+  <div id="hud" class="plate hand"><span id="miles">0.00</span> MI<small>of 0.20</small><div id="route"><img src="layers/walker.png" alt=""></div></div>
+  <div id="cap" class="hand"><span class="who"></span><span class="say"></span></div>
+
+  <div class="card" id="intro"><div>
+    <p class="hand sm" id="i1">Chicken Nugget presents</p>
+    <p class="hand xl" id="i2">Blake &amp; Kat</p>
+    <p class="hand md" id="i3">in</p>
+    <p class="hand lg" id="i4">The Point-Two</p>
+    <p class="script" id="i5">an athletic event in one act</p>
+    <p class="hand sm red" id="i6" style="margin-top:26px">Episode One</p>
+  </div></div>
+
+  <div class="card" id="outro"><div>
+    <p class="hand xl" id="o1">The End</p>
+    <p class="hand sm" id="o2" style="margin-top:18px">Starring</p>
+    <p class="hand md" id="o3"><span class="red">Blake</span> &middot; the overthinker</p>
+    <p class="hand md" id="o4"><span class="red">Kat</span> &middot; the honest one</p>
+    <p class="hand md" id="o5"><span class="red">Chicken Nugget</span> &middot; narrator, advisor, clock</p>
+    <p class="hand sm" id="o6" style="margin-top:30px">3 hours &middot; 2 cities &middot; 2 bowls of chicken and rice &middot; 1 friendship, approved</p>
+    <p class="script" id="o7" style="margin-top:20px">To be continued&hellip; very soon.</p>
+  </div></div>
+
+  <div id="pink"></div>
+  <div id="grain"></div>
+</div>
+<div id="play">Click to play</div>
+<audio id="audio" src="episode2/episode.m4a" preload="auto"></audio>
+
+<script>
+(async function () {
+  'use strict';
+  const Q = new URLSearchParams(location.search);
+  const RENDER = Q.has('render');
+  const W = 1920, H = 1080;
+  if (RENDER) document.documentElement.classList.add('render');
+  const $ = (id) => document.getElementById(id);
+  const stage = $('stage'), shift = $('shift');
+  const EP = await (await fetch('episode2/episode.json')).json();
+  const DUR = EP.duration, FPS = EP.fps, BEAT = 60 / EP.bpm;
+  const scene = Object.fromEntries(EP.scenes.map((s) => [s.id, s]));
+  const M = EP.marks;
+
+  /* ---------- the scrubber ---------- */
+  const anims = [], shots = [], perFrame = [];
+  const EASE = 'cubic-bezier(.45,0,.55,1)';
+  function track(el, kfs, ease) {
+    const t0 = kfs[0][0], d = Math.max(kfs[kfs.length - 1][0] - t0, 0.001);
+    const a = el.animate(kfs.map(([t, p]) => Object.assign({ offset: Math.min(1, Math.max(0, (t - t0) / d)), easing: ease || EASE }, p)), { delay: t0 * 1000, duration: d * 1000, fill: 'both' });
+    a.pause(); anims.push(a); return a;
+  }
+  const rise = (id, t) => track($(id), [[t, { opacity: 0, transform: 'translateY(16px)' }], [t + 0.8, { opacity: 1, transform: 'none' }]], 'ease-out');
+  function rng(seed) { let s = seed >>> 0; return () => ((s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296); }
+  const el = (tag, css, parent, attrs) => { const n = document.createElement(tag); Object.assign(n.style, css || {}); Object.assign(n, attrs || {}); (parent || stage).appendChild(n); return n; };
+
+  /* ---------- the plate: a matted picture with a caption band, as in the film ---------- */
+  const MAT = [74, 74, 196, 74], OFF = (MAT[0] - MAT[2]) / 2;
+  $('picture').style.clipPath = `inset(${MAT[0]}px ${MAT[1]}px ${MAT[2]}px ${MAT[3]}px)`;
+  Object.assign($('line').style, { top: MAT[0] - 5 + 'px', left: MAT[3] - 5 + 'px', right: MAT[1] - 5 + 'px', bottom: MAT[2] - 5 + 'px' });
+  $('cap').style.top = H - MAT[2] + 26 + 'px';
+  const cam = ([cx, cy, z]) => `translate(${W / 2 - cx * z}px, ${H / 2 + OFF - cy * z}px) scale(${z})`;
+
+  function shot(tin, tout, hard) {
+    const s = { el: el('div', {}, shift), tin, tend: tout + 0.8, chars: {} };
+    s.el.className = 'shot';
+    s.board = el('div', {}, s.el); s.board.className = 'board';
+    track(s.el, [[tin, { opacity: 0 }], [tin + (hard ? 0.02 : 0.4), { opacity: 1 }]], 'linear');
+    s.img = (name, x, y, w, parent) => el('img', { position: 'absolute', left: x + 'px', top: y + 'px', width: w + 'px' }, parent || s.board, { src: `layers/${name}.png`, alt: '' });
+    s.tile = (name) => { const d = el('div', { backgroundImage: `url(layers/${name}.png)` }, s.board); d.className = 'tile'; return d; };
+    s.char = (who, name, x, y, w, mouth) => {              // mouth: [x%, y%, width%]
+      const c = el('div', { left: x + 'px', top: y + 'px', width: w + 'px' }, s.board); c.className = 'char';
+      const bob = el('div', {}, c);
+      el('img', {}, bob, { src: `layers/${name}.png`, alt: '' });
+      const m = el('div', { left: mouth[0] + '%', top: mouth[1] + '%', width: mouth[2] + '%', height: mouth[2] * 0.62 * w / 100 + 'px', marginLeft: -mouth[2] / 2 + '%', marginTop: -mouth[2] * 0.31 * w / 100 + 'px' }, bob);
+      m.className = 'mouth';
+      s.chars[who] = { box: c, bob, mouth: m };
+      return s.chars[who];
+    };
+    // the camera cuts on each line: a close-up for short, punchy lines, the two of them otherwise
+    s.cut = (lines, views, pick) => {
+      const k = [];
+      lines.forEach((ln, i) => {
+        const v = views[pick(ln, i)], next = i + 1 < lines.length ? lines[i + 1].start : tout + 0.8;
+        const t0 = i === 0 ? tin : ln.start - 0.12;
+        k.push([t0, { transform: cam(v) }], [next - 0.125, { transform: cam([v[0], v[1], v[2] * 1.035]) }]);
+      });
+      track(s.board, k, 'linear');
+    };
+    shots.push(s); return s;
+  }
+  const linesIn = (...ids) => EP.lines.filter((l) => ids.includes(l.scene));
+  const MOUTH = { B: [50, 50.6, 9], K: [50, 50.2, 8], N: [50, 41.4, 10] };
+  const chooser = (ln, i) => (ln.who === 'N' ? (i % 2 ? 'dog' : 'wide') : ln.text.length < 30 ? ln.who : 'two');
+
+  /* =====================  INTRO  ===================== */
+  const palms = (parent, t0, t1) => [['sil-palm', { left: '60px', height: '720px' }, ''], ['sil-palm-b', { right: '80px', height: '600px' }, 'scaleX(-1)']].forEach(([name, css, flip]) => {
+    const p = el('img', css, parent, { src: `layers/${name}.png`, alt: '' }); p.className = 'sil';
+    const k = [[t0, { opacity: 0, transform: `${flip} rotate(0deg)` }]];
+    for (let t = t0 + BEAT, i = 0; t < t1; t += BEAT * 2, i++) k.push([t, { opacity: 1, transform: `${flip} rotate(${i % 2 ? -1.8 : 1.8}deg)` }]);
+    track(p, k, 'ease-in-out');
+  });
+  const trotter = (parent, t0, t1, bottom) => {                // Chicken Nugget's silhouette, two steps to the beat
+    const d = el('img', { position: 'absolute', left: 0, bottom: bottom + 'px', width: '120px', zIndex: 3 }, parent, { src: 'layers/walker.png', alt: '' });
+    const k = [];
+    for (let t = t0, i = 0; t <= t1; t += BEAT / 2, i++) k.push([t, { transform: `translate(${-160 + (t - t0) / (t1 - t0) * (W + 200)}px, ${i % 2 ? -9 : 0}px)` }]);
+    track(d, k, 'linear');
+  };
+  // The title sequence, cut to the theme song (120 BPM: a beat every half second).
+  //   0:02 Blake!   0:04 And Kat!   0:06 And Chicken Nugget!   0:08 all three   0:12 the title
+  const intro = $('intro'), I = scene.intro, TB = 0.5;
+  intro.innerHTML = ''; intro.style.display = 'block';
+  track(intro, [[0, { opacity: 1 }], [I.end - 0.7, { opacity: 1 }], [I.end, { opacity: 0 }]], 'linear');
+  const pop = (node, t, rot = 0) => track(node, [[t, { opacity: 0, transform: `scale(.3) rotate(${rot - 9}deg)` }], [t + 0.12, { opacity: 1, transform: `scale(1.14) rotate(${rot + 2}deg)` }], [t + 0.3, { opacity: 1, transform: `scale(1) rotate(${rot}deg)` }]], 'ease-out');
+  const bounce = (node, t0, t1, amp, phase = 0) => { const k = []; for (let t = t0, i = phase; t <= t1; t += TB / 2, i++) k.push([t, { transform: `translateY(${i % 2 ? -amp : 0}px)` }]); k.push([t1 + 0.3, { transform: 'translateY(0)' }]); track(node, k, 'ease-in-out'); };
+  const show = (node, t0, t1) => track(node, [[t0 - 0.01, { opacity: 0 }], [t0, { opacity: 1 }], [t1, { opacity: 1 }], [t1 + 0.01, { opacity: 0 }]], 'linear');
+  const full = { position: 'absolute', inset: 0, overflow: 'hidden' };
+  // the pick-up: stars pop one by one up the scale
+  const pre = el('div', Object.assign({ background: '#FDFAF4' }, full), intro); show(pre, 0, 2.0);
+  for (let j = 0; j < 7; j++) {
+    const s = el('div', { position: 'absolute', left: 300 + j * 200 + 'px', top: 620 - j * 60 + 'px', fontSize: 110 + j * 12 + 'px', color: ['#D8402F', '#F29AAE', '#F5D45E', '#2FA866', '#2B4FA0'][j % 5], opacity: 0 }, pre);
+    s.textContent = '✦'; pop(s, j * 0.25, j * 9);
+  }
+  function panel(t0, t1, bg, img, w, name, role, side) {
+    const other = side === 'left' ? 'right' : 'left';
+    const p = el('div', Object.assign({ background: bg, backgroundSize: 'cover' }, full), intro); show(p, t0, t1);
+    const slide = el('div', { position: 'absolute', bottom: '-30px', [side]: '170px', width: w + 'px' }, p);
+    track(slide, [[t0, { transform: `translateX(${side === 'left' ? -1000 : 1000}px)` }], [t0 + 0.34, { transform: 'translateX(0)' }]], 'cubic-bezier(.2,1.3,.4,1)');
+    bounce(el('img', { width: '100%' }, slide, { src: `layers/${img}.png`, alt: '' }), t0 + 0.5, t1, 26);
+    const text = el('div', { position: 'absolute', top: '250px', [other]: '150px', width: '780px', textAlign: 'center' }, p);
+    const plate = el('div', { display: 'inline-block', padding: '26px 54px 14px', fontSize: name.length > 6 ? '120px' : '200px', whiteSpace: 'normal', opacity: 0 }, text);
+    plate.className = 'plate hand'; plate.innerHTML = name; pop(plate, t0 + 0.04, side === 'left' ? 3 : -3);
+    const sub = el('div', { marginTop: '50px', fontFamily: '"La Belle Aurore", cursive', fontSize: '76px', color: '#1F1C1B', opacity: 0 }, text);
+    sub.textContent = role; pop(sub, t0 + TB * 2);
+  }
+  panel(2.0, 4.0, '#BBD6F5 url(layers/paper-blue.png)', 'e2-blake', 700, 'Blake', 'in Atlanta', 'left');
+  panel(4.0, 6.0, '#F7E3A8', 'ep-kat', 700, 'Kat', 'in Los Angeles', 'right');
+  panel(6.0, 8.0, '#F4AEB8 url(layers/wall-pink.png)', 'ep-dog', 520, 'Chicken<br>Nugget', 'your narrator', 'left');
+  // all three, and the title
+  const all = el('div', Object.assign({ background: '#FDFAF4' }, full), intro); show(all, 8.0, I.end + 1);
+  palms(all, 8.0, I.end);
+  const names = el('div', { position: 'absolute', left: 0, right: 0, top: '70px', textAlign: 'center', fontSize: '170px', color: '#D8402F', opacity: 0 }, all);
+  names.className = 'hand'; names.innerHTML = 'Blake &amp; Kat'; pop(names, 8.0);
+  [['e2-blake', { left: '300px', bottom: '-30px', width: '430px' }, 8.0, 0, 30], ['ep-dog', { left: '835px', bottom: '30px', width: '250px' }, 8.5, 1, 54], ['ep-kat', { right: '300px', bottom: '-30px', width: '430px' }, 9.0, 0, 30]].forEach(([img, css, t, phase, amp]) => {
+    const w = el('div', Object.assign({ position: 'absolute', transformOrigin: '50% 100%', opacity: 0 }, css), all); pop(w, t);
+    bounce(el('img', { width: '100%' }, w, { src: `layers/${img}.png`, alt: '' }), t + 0.5, 15.0, amp, phase);
+  });
+  const row = el('div', { position: 'absolute', left: 0, right: 0, top: '290px', display: 'flex', justifyContent: 'center' }, all);
+  const title = el('div', { padding: '24px 60px 16px', fontSize: '118px', opacity: 0 }, row);
+  title.className = 'plate hand'; title.innerHTML = 'Starting to Talk<small style="display:block;font-size:.3em;color:#1F1C1B;letter-spacing:.3em;margin-top:6px">Episode Two</small>';
+  pop(title, 12.0, -2);
+  track(title, [[14.0, { transform: 'scale(1) rotate(-2deg)' }], [14.12, { transform: 'scale(1.1) rotate(-2deg)' }], [14.5, { transform: 'scale(1) rotate(-2deg)' }]], 'ease-out');
+
+  /* =====================  THE PHONE CALL  =====================
+     One long conversation, seen from several places. Each line of the script names a view
+     (or gets one from who is speaking); a view is a shot plus where the camera sits in it. */
+  function tag(s, text, x = 150) { const p = el('div', { position: 'absolute', left: x + 'px', top: '210px', padding: '10px 26px 6px', fontSize: '40px', rotate: '-2deg' }, s.board); p.className = 'plate hand'; p.innerHTML = text; return p; }
+  const stageShot = () => shot(0, DUR, true);
+  const VIEW = {};
+
+  // the two cities, side by side with two thousand miles between them
+  const strip = stageShot();
+  s_img(strip, 'e2-la', 0); s_img(strip, 'e2-atl', 2880);
+  function s_img(s, name, x, parent) { return s.img(name, x, 0, 1920, parent); }
+  {
+    const gap = el('div', { position: 'absolute', left: '1920px', top: 0, width: '960px', height: '1080px', background: '#BFE3BE' }, strip.board);
+    gap.innerHTML = `<svg viewBox="0 0 960 1080" style="position:absolute;inset:0;width:960px;height:1080px"><path d="M-40 620 C240 300 720 300 1000 620" fill="none" stroke="#D8402F" stroke-width="10" stroke-dasharray="4 30" stroke-linecap="round"/></svg>`;
+    const miles = el('div', { position: 'absolute', left: '250px', top: '470px', padding: '14px 30px 8px', fontSize: '54px' }, gap); miles.className = 'plate hand'; miles.textContent = 'About 2,000 miles';
+    tag(strip, 'Los Angeles &middot; across from the country club'); tag(strip, 'Atlanta', 3030);
+  }
+  const smooth = (x) => x * x * (3 - 2 * x);
+  const stripPan = (x) => (t, cur, prev) => {
+    const from = prev && VIEW[viewOf(prev)].shot === strip ? VIEW[viewOf(prev)].x : x;
+    return cam([from + (x - from) * smooth(Math.min(1, Math.max(0, (t - cur.start + 0.12) / 4))), 540, 1]);
+  };
+  VIEW.la = { shot: strip, x: 960, pan: stripPan(960) }; VIEW.atl = { shot: strip, x: 3840, pan: stripPan(3840) };
+
+  // Blake's side: the studio
+  const studio = stageShot();
+  s_img(studio, 'e2-studio', 0); studio.char('B', 'e2-blake', 700, 250, 500, MOUTH.B); s_img(studio, 'e2-studio-fg', 0);
+  tag(studio, 'Atlanta &middot; the studio');
+  VIEW.B = { shot: studio, cam: [960, 560, 1.12] };
+
+  // Kat's side, and Chicken Nugget's
+  const room = stageShot();
+  s_img(room, 'e2-room', 0); room.char('K', 'ep-kat', 520, 270, 480, MOUTH.K); room.char('N', 'ep-dog', 1300, 560, 230, MOUTH.N); s_img(room, 'e2-room-fg', 0);
+  tag(room, 'Los Angeles &middot; Kat&rsquo;s, high above the country club');
+  VIEW.K = { shot: room, cam: [800, 570, 1.18] }; VIEW.N = { shot: room, cam: [1415, 700, 2.1] };
+
+  // both at once
+  const split = stageShot();
+  [[0, 'e2-studio', 'e2-studio-fg', 'B', 'e2-blake', 700, 250, 500, -300], [960, 'e2-room', 'e2-room-fg', 'K', 'ep-kat', 520, 270, 480, -150]].forEach(([left, bg, fg, who, img, x, y, w, shiftX]) => {
+    const half = el('div', { position: 'absolute', left: left + 'px', top: 0, width: '960px', height: '1080px', overflow: 'hidden' }, split.board);
+    const inner = el('div', { position: 'absolute', left: shiftX + 'px', top: '-20px', width: '1920px', height: '1080px', transformOrigin: '0 0', transform: 'scale(1.02)' }, half);
+    s_img(split, bg, 0, inner); inner.appendChild(split.char(who, img, x, y, w, MOUTH[who]).box); s_img(split, fg, 0, inner);
+  });
+  el('div', { position: 'absolute', left: '953px', top: 0, width: '14px', height: '1080px', background: '#1F1C1B' }, split.board);
+  VIEW.split = { shot: split, cam: [960, 540, 1] };
+
+  // three hours go by
+  const clock = stageShot(); clock.el.style.background = '#F7E3A8';
+  clock.img('sil-blake', 300, 430, 330); clock.img('sil-kat', 1290, 430, 330); clock.img('clock', 660, 200, 600);
+  const hand = (h, w) => el('div', { position: 'absolute', left: 960 - w / 2 + 'px', top: 500 - h + 'px', width: w + 'px', height: h + 'px', background: '#1F1C1B', borderRadius: '6px', transformOrigin: '50% 100%' }, clock.board);
+  const hourHand = hand(140, 16), minuteHand = hand(210, 10);
+  const clockLines = EP.lines.filter((l) => l.view === 'clock');
+  perFrame.push((t) => {
+    const i = clockLines.findIndex((l) => t >= l.start - 0.2 && t < l.end + 3); if (i < 0) return;
+    const p = Math.min(1, Math.max(0, (t - clockLines[i].start) / (clockLines[i].end - clockLines[i].start + 1)));
+    hourHand.style.transform = `rotate(${(9 + i + p) * 30}deg)`; minuteHand.style.transform = `rotate(${p * 360}deg)`;
+  });
+  VIEW.clock = { shot: clock, cam: [960, 560, 1] };
+
+  // the two stories
+  const journey = stageShot(); s_img(journey, 'e2-journey', 0); tag(journey, 'From Latvia'); tag(journey, 'To here', 1480);
+  VIEW.journey = { shot: journey, cam: [960, 540, 1.04] };
+  const doors = stageShot(); s_img(doors, 'e2-doors', 0); tag(doors, 'Every weekend');
+  VIEW.doors = { shot: doors, cam: [960, 580, 1.1] };
+
+  // afterwards
+  const house = stageShot(); s_img(house, 'e2-house', 0); tag(house, 'Atlanta &middot; Blake&rsquo;s house');
+  VIEW.house = { shot: house, cam: [960, 560, 1.02] };
+  [['bedB', 'B', 'e2-blake', 'e2-bed-fg-b', 'Atlanta &middot; home, 3 a.m.'], ['bedK', 'K', 'ep-kat', 'e2-bed-fg-k', 'Los Angeles &middot; high above the fairway']].forEach(([name, who, img, fg, label]) => {
+    const s = stageShot();
+    s_img(s, 'e2-bed-' + fg.slice(-1), 0); s.char(who, img, 720, 250, 480, MOUTH[who]);
+    if (who === 'K') s.char('N', 'ep-dog', 1250, 500, 220, MOUTH.N);
+    s_img(s, fg, 0); tag(s, label);
+    [[0, 30], [1, 46], [2, 66]].forEach(([i, d]) => el('div', { position: 'absolute', left: 1010 + i * 60 + 'px', top: 330 - i * 70 + 'px', width: d + 'px', height: d + 'px', borderRadius: '50%', background: '#FDFAF4', border: '5px solid #1F1C1B' }, s.board));
+    VIEW[name] = { shot: s, cam: who === 'B' ? [960, 540, 1] : [960, 560, 1.08] };
+  });
+
+  const lineAt = (t) => { let r = 0; for (let i = 0; i < EP.lines.length; i++) { if (EP.lines[i].start - 0.12 <= t) r = i; else break; } return r; };
+  const viewOf = (l) => l.view || { B: 'B', BT: 'B', K: 'K', KT: 'K', N: 'N' }[l.who];
+  function direct(t) {                                         // which shot is live, and where the camera is
+    const i = lineAt(t), cur = EP.lines[i], v = VIEW[viewOf(cur)];
+    for (const sh of shots) sh.el.style.display = sh === v.shot ? 'block' : 'none';
+    const p = Math.min(1, Math.max(0, (t - cur.start) / (cur.end - cur.start + 1)));
+    v.shot.board.style.transform = v.pan ? v.pan(t, cur, EP.lines[i - 1]) : cam([v.cam[0], v.cam[1], v.cam[2] * (1 + 0.04 * p)]);
+  }
+
+  /* =====================  OUTRO  ===================== */
+  const outro = $('outro'), O = scene.outro;
+  track(outro, [[O.start - 0.5, { opacity: 0 }], [O.start + 0.5, { opacity: 1 }]], 'linear');
+  palms(outro, O.start, DUR);
+  [['o1', 1.0], ['o2', 6.4], ['o3', 7.4], ['o4', 8.4], ['o5', 9.4], ['o6', 12.0], ['o7', 14.6]].forEach(([id, dt]) => rise(id, O.start + dt));
+  trotter(outro, O.start + 1, DUR, 70);
+  const curtain = el('div', { position: 'absolute', inset: 0, background: '#FDFAF4', opacity: 0 });
+  stage.insertBefore(curtain, $('pink'));
+  track(curtain, [[DUR - 1.6, { opacity: 0 }], [DUR - 0.1, { opacity: 1 }]], 'linear');
+
+  /* ---------- per-frame: mouths, captions, the odometer ---------- */
+  const cap = $('cap'), capWho = cap.querySelector('.who'), capSay = cap.querySelector('.say');
+  const miles = $('miles'), dogIcon = $('route').querySelector('img'), grain = $('grain');
+  let shown = -2;
+  function apply(t) {
+    for (const a of anims) a.currentTime = t * 1000;
+    direct(t);
+    const fr = Math.min(Math.round(t * FPS), EP.mouth.B.length - 1);
+    grain.style.backgroundPosition = `${(fr * 37) % 300}px ${(fr * 91) % 300}px`;
+    const li = EP.lines.findIndex((l) => t >= l.start - 0.06 && t <= l.end + 0.35);
+    if (li !== shown) {
+      shown = li;
+      const l = EP.lines[li];
+      const visible = l && l.scene !== 'intro' && l.scene !== 'outro';
+      capWho.textContent = visible ? l.name : ''; capSay.textContent = visible ? l.text : ''; cap.classList.toggle('thinking', !!(visible && l.who.length > 1));
+    }
+    for (const sh of shots) for (const who in sh.chars) {
+      const v = EP.mouth[who][fr], c = sh.chars[who];
+      c.mouth.style.opacity = v > 0.06 ? 1 : 0;
+      c.mouth.style.transform = `scaleY(${(0.3 + 0.7 * v).toFixed(3)})`;
+      c.box.style.transform = `scale(${(1 + 0.02 * Math.min(1, v * 2)).toFixed(4)})`;
+    }
+    for (const fn of perFrame) fn(t);
+  }
+  window.seek = async (t) => {
+    apply(t);
+    const imgs = [...document.images].filter((i) => i.offsetParent !== null);
+    await Promise.all(imgs.map((i) => i.decode().catch(() => {})));
+    await new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
+  };
+  window.ready = (async () => {
+    await document.fonts.ready;
+    await Promise.all(['"Covered By Your Grace"', '"La Belle Aurore"'].map((f) => document.fonts.load(`40px ${f}`)));
+    const urls = [...new Set([...document.images].map((i) => i.src).concat(['ep-mid', 'ep-hedge-fl'].map((n) => new URL(`layers/${n}.png`, location.href).href)))];
+    await Promise.all(urls.map((u) => new Promise((res) => { const i = new Image(); i.onload = i.onerror = res; i.src = u; })));
+    await window.seek(0);
+    return DUR;
+  })();
+
+  if (!RENDER) {
+    const fit = () => { const k = Math.min(innerWidth / W, innerHeight / H); stage.style.transform = `translate(${(innerWidth - W * k) / 2}px, ${(innerHeight - H * k) / 2}px) scale(${k})`; };
+    addEventListener('resize', fit); fit();
+    const audio = $('audio');
+    $('play').addEventListener('click', async () => {
+      $('play').style.display = 'none';
+      await window.ready; audio.currentTime = +(Q.get('t') || 0); await audio.play();
+      const loop = () => { apply(Math.min(audio.currentTime, DUR)); if (!audio.ended) requestAnimationFrame(loop); };
+      loop();
+    });
+  }
+})();
+</script>
+</body>
+</html>
